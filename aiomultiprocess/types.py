@@ -5,6 +5,7 @@ import multiprocessing
 from asyncio import BaseEventLoop
 from typing import (
     Any,
+    AsyncContextManager,
     Callable,
     Dict,
     NamedTuple,
@@ -13,6 +14,7 @@ from typing import (
     Sequence,
     Tuple,
     TypeVar,
+    Union,
 )
 
 T = TypeVar("T")
@@ -29,6 +31,7 @@ TracebackStr = str
 LoopInitializer = Callable[..., BaseEventLoop]
 PoolTask = Optional[Tuple[TaskID, Callable[..., R], Sequence[T], Dict[str, T]]]
 PoolResult = Tuple[TaskID, Optional[R], Optional[TracebackStr]]
+Lifespan = Callable[[None], AsyncContextManager[None]]
 
 
 class Unit(NamedTuple):
@@ -38,7 +41,7 @@ class Unit(NamedTuple):
     args: Sequence[Any]
     kwargs: Dict[str, Any]
     namespace: Any
-    initializer: Optional[Callable] = None
+    initializer: Optional[Union[Lifespan, Callable]] = None
     initargs: Sequence[Any] = ()
     loop_initializer: Optional[LoopInitializer] = None
     runner: Optional[Callable] = None

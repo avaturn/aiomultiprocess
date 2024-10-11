@@ -8,7 +8,9 @@ import multiprocessing.context
 import multiprocessing.managers
 import os
 import sys
-from typing import Any, Callable, Dict, Optional, Sequence
+from contextlib import nullcontext
+from typing import Any, Callable, Dict, Optional, Sequence, Coroutine, AsyncContextManager, Union
+
 
 from .types import Context, R, Unit
 
@@ -140,10 +142,13 @@ class Process:
 
             asyncio.set_event_loop(loop)
 
-            if unit.initializer:
-                unit.initializer(*unit.initargs)
+            lifespan = unit.initializer if unit.initializer is not None else nullcontext
 
-            result: R = loop.run_until_complete(unit.target(*unit.args, **unit.kwargs))
+            async def _lifespan():
+                async with lifespan(*unit.initargs):
+                    await unit.target(*unit.args, **unit.kwargs)
+
+            result: R = loop.run_until_complete(_lifespan)
 
             return result
 
